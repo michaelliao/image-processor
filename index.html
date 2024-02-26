@@ -43,21 +43,21 @@
                         <h4 class="card-header">Options</h4>
                         <div class="card-body">
                             <div class="form-group row">
-                                <label for="inputMaxWidth" class="col-6 col-form-label">maxWidth</label>
+                                <label class="col-6 col-form-label">Max width</label>
                                 <div class="col-6">
-                                    <input type="number" name="maxWidth" class="form-control" id="inputMaxWidth"
-                                        placeholder="Infinity" v-model.number="options.maxWidth">
+                                    <input type="number" class="form-control" min="10" max="10000"
+                                        v-model.number="options.maxWidth">
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="inputMaxHeight" class="col-6 col-form-label">maxHeight</label>
+                                <label class="col-6 col-form-label">Max height</label>
                                 <div class="col-6">
-                                    <input type="number" name="maxHeight" class="form-control" id="inputMaxHeight"
-                                        placeholder="Infinity" v-model.number="options.maxHeight">
+                                    <input type="number" class="form-control" min="10" max="10000"
+                                        v-model.number="options.maxHeight">
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label class="col-6 col-form-label">border:
+                                <label class="col-6 col-form-label">Border:
                                     <span>{{ options.border }}</span>
                                 </label>
                                 <div class="col-6">
@@ -66,7 +66,7 @@
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label class="col-6 col-form-label">padding:
+                                <label class="col-6 col-form-label">Padding:
                                     <span>{{ options.padding }}</span>
                                 </label>
                                 <div class="col-6">
@@ -75,12 +75,24 @@
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label class="col-6 col-form-label">quality:
+                                <label class="col-6 col-form-label">Quality:
                                     <span>{{ options.quality }}</span>
                                 </label>
                                 <div class="col-6">
                                     <input type="range" min="0.1" max="1.0" step="0.1" class="w-100 mt-2"
                                         v-model.number="options.quality">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-6 col-form-label">Border color</label>
+                                <div class="col-6">
+                                    <input type="color" class="mt-2" v-model="options.borderColor">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-6 col-form-label">Bg color</label>
+                                <div class="col-6">
+                                    <input type="color" class="mt-2" v-model="options.bgColor">
                                 </div>
                             </div>
                             <div class="form-group row">
@@ -182,6 +194,8 @@
                         border: 0,
                         padding: 0,
                         quality: 0.5,
+                        borderColor: '#cccccc',
+                        bgColor: '#ffffff',
                         outputType: 'image/jpeg'
                     },
                     input: {
@@ -246,6 +260,7 @@
                             this.load(file);
                         }
                     },
+
                     load: function (file) {
                         console.log('load file: ', file);
                         if (!file) {
@@ -267,6 +282,9 @@
                     },
 
                     updateOutput: function () {
+                        // save options:
+                        localStorage.setItem('options', JSON.stringify(this.options));
+
                         if (!this.input.image || !this.input.width || !this.input.height) {
                             return;
                         }
@@ -274,21 +292,36 @@
                         const b = this.options.border;
                         const p = this.options.padding;
 
-                        this.output.width = this.input.width + b + b + p + p;
-                        this.output.height = this.input.height + b + b + p + p;
+                        const ori_w = this.input.width + b + b + p + p;
+                        const ori_h = this.input.height + b + b + p + p;
 
-                        const w = this.output.width;
-                        const h = this.output.height;
+                        let w = ori_w;
+                        let h = ori_h;
+                        if ((w > this.options.maxWidth && this.options.maxWidth >= 10) || (h > this.options.maxHeight && this.options.maxHeight >= 10)) {
+                            w = this.options.maxWidth;
+                            h = this.options.maxHeight;
+                            // strech but keep ratio:
+                            if (h > w * ori_h / ori_w) {
+                                h = parseInt(w * ori_h / ori_w);
+                            } else if (w > h * ori_w / ori_h) {
+                                w = parseInt(h * ori_w / ori_h);
+                            }
+                        }
+                        // ori_w / ori_h ===  w /  h
+                        // h = w * ori_h / ori_w
+                        this.output.width = w;
+                        this.output.height = h;
+
                         console.log('update output: ' + w + ' x ' + h);
 
                         let canvas = new OffscreenCanvas(w, h);
                         let ctx = canvas.getContext('2d');
                         // draw background:
-                        ctx.fillStyle = '#ffffff';
+                        ctx.fillStyle = this.options.bgColor;
                         ctx.fillRect(0, 0, w, h);
                         // draw border:
                         if (b > 0) {
-                            ctx.fillStyle = '#999999';
+                            ctx.fillStyle = this.options.borderColor;
                             ctx.fillRect(0, 0, w, b);
                             ctx.fillRect(0, h - b, w, b);
                             ctx.fillRect(0, 0, b, h);
@@ -329,6 +362,7 @@
                         console.log(e);
                         this.load(e.dataTransfer.files ? e.dataTransfer.files[0] : null);
                     },
+
                 },
 
                 watch: {
@@ -341,6 +375,20 @@
                 },
 
                 mounted: function () {
+                    // load options from local storage:
+                    let strOpts = localStorage.getItem('options');
+                    if (typeof (strOpts) === 'string') {
+                        let opts = JSON.parse(strOpts);
+                        if (opts) {
+                            console.log(`loaded options: ${strOpts}`);
+                            for (let key in this.options) {
+                                if (typeof (opts[key]) !== 'undefined') {
+                                    this.options[key] = opts[key];
+                                }
+                            }
+                        }
+                    }
+
                     let xhr = new XMLHttpRequest();
                     xhr.onload = () => {
                         var blob = xhr.response;
