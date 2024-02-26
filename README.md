@@ -2,7 +2,7 @@
 
 Tool for processing image in-browser without server-side logic.
 
-[Website](https://michaelliao.github.io/image-processor/).
+[Image Processor Website](https://michaelliao.github.io/image-processor/)
 
 Screenshot:
 
