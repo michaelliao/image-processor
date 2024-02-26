@@ -6,4 +6,4 @@ Tool for processing image in-browser without server-side logic.
 
 Screenshot:
 
-![screenshot](picture.jpg?raw=true)
+![screenshot](screenshot.jpg?raw=true)
