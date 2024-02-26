@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Chen Fengyuan">
+    <title>Image Processor</title>
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap@4/dist/css/bootstrap.min.css" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="jumbotron bg-primary text-white rounded-0">
+        <div class="container-xl">
+            <div class="row">
+                <div class="col">
+                    <h1>Image Processor for Web Browser <small class="h6">v1.0</small></h1>
+                    <p class="lead">In-browser JavaScript image processor.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-xl">
+        <h3>Playground</h3>
+        <hr>
+        <div id="app" v-cloak>
+            <div class="card bg-light mb-4" @change="change" @dragover="dragover" @drop="drop">
+                <div class="card-body">
+                    <div class="pt-5 pb-1 text-center">Drop image file here or <label class="text-primary"
+                            style="cursor: pointer;">browse... <input type="file" class="sr-only" id="file"
+                                accept="image/*" ref="input"></label></div>
+                    <div class="pt-1 pb-5 text-center">
+                        Or <label @click="pasteImage" class="text-primary" style="cursor: pointer;">paste image</label>
+                        from clipboard:
+                        <span id="paste-ok" v-show="pasteResult==='ok'" class="text-success">OK</span>
+                        <span id="paste-failed" v-show="pasteResult==='failed'" class="text-danger">No image</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-4 mb-4">
+                    <div class="card h-100">
+                        <h4 class="card-header">Options</h4>
+                        <div class="card-body">
+                            <div class="form-group row">
+                                <label for="inputMaxWidth" class="col-5 col-form-label">maxWidth</label>
+                                <div class="col-7">
+                                    <input type="number" name="maxWidth" class="form-control" id="inputMaxWidth"
+                                        placeholder="Infinity" v-model.number="options.maxWidth">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="inputMaxHeight" class="col-5 col-form-label">maxHeight</label>
+                                <div class="col-7">
+                                    <input type="number" name="maxHeight" class="form-control" id="inputMaxHeight"
+                                        placeholder="Infinity" v-model.number="options.maxHeight">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-5 col-form-label">border:
+                                    <span>{{ options.border }}</span>
+                                </label>
+                                <div class="col-7">
+                                    <input type="range" min="0" max="10" step="1" class="w-100 mt-2"
+                                        v-model.number="options.border">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-5 col-form-label">padding:
+                                    <span>{{ options.padding }}</span>
+                                </label>
+                                <div class="col-7">
+                                    <input type="range" min="0" max="10" step="1" class="w-100 mt-2"
+                                        v-model.number="options.padding">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-5 col-form-label">quality:
+                                    <span>{{ options.quality }}</span>
+                                </label>
+                                <div class="col-7">
+                                    <input type="range" min="0.1" max="1.0" step="0.1" class="w-100 mt-2"
+                                        v-model.number="options.quality">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-5 col-form-label">Output Type</label>
+                                <div class="col-7">
+                                    <select class="form-control" v-model="options.outputType">
+                                        <option>image/jpeg</option>
+                                        <option>image/png</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-8 mb-4">
+                    <div class="card mb-4">
+                        <h5 class="card-header d-flex align-items-center justify-content-between">
+                            <span>Input image</span>
+                            <a class="btn btn-sm btn-blocks btn-outline-primary"
+                                :download="input.file && input.file.name" :href="input.url">Download</a>
+                        </h5>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-3">name:</dt>
+                                <dd class="col-3">{{ input.file && input.file.name || 'N/A' }}</dd>
+                                <dt class="col-3">type:</dt>
+                                <dd class="col-3">{{ input.file && input.file.type || 'N/A' }}</dd>
+                                <dt class="col-3">image size:</dt>
+                                <dd class="col-3">{{ input.width || 'N/A' }} x {{ input.height || 'N/A' }}</dd>
+                                <dt class="col-3">file size:</dt>
+                                <dd class="col-3">{{ input.file && input.file.size | prettySize }}</dd>
+                            </dl>
+                            <div class="row">
+                                <div class="col-12 d-flex mb-3">
+                                    <div class="w-100 text-center" v-if="input.url">
+                                        <img class="mw-100" :src="input.url">
+                                    </div>
+                                    <div v-else class="w-100 bg-light"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h5 class="card-header d-flex align-items-center justify-content-between">
+                            <span>Output image</span>
+                            <input type="text" v-model="output.rename" maxlength="100" class="form-control"
+                                style="width:50%">
+                            <a class="btn btn-sm btn-blocks btn-outline-primary"
+                                :download="output.file && output.rename" :href="output.url">Download</a>
+                        </h5>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-3">name:</dt>
+                                <dd class="col-3">{{ output.file && output.file.name || 'N/A' }}</dd>
+                                <dt class="col-3">type:</dt>
+                                <dd class="col-3">{{ output.file && output.file.type || 'N/A' }}</dd>
+                                <dt class="col-3">image size:</dt>
+                                <dd class="col-3">{{ output.width && output.width }} x {{ output.height && output.height
+                                    }}</dd>
+                                <dt class="col-3">file size:</dt>
+                                <dd class="col-3">{{ output.file && output.file.size | prettySize }}</dd>
+                            </dl>
+                            <div class="row">
+                                <div class="col-12 d-flex mb-3">
+                                    <div class="w-100 text-center" v-if="output.url">
+                                        <img class="mw-100" :src="output.url">
+                                    </div>
+                                    <div v-else class="w-100 bg-light"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <hr>
+            <nav class="nav flex-wrap justify-content-center mb-3">
+                <a class="nav-link" href="https://github.com/fengyuanchen/compressorjs">GitHub</a>
+                <a class="nav-link" href="https://github.com/fengyuanchen/compressorjs/releases">Releases</a>
+                <a class="nav-link" href="https://github.com/fengyuanchen/compressorjs/blob/main/LICENSE">License</a>
+                <a class="nav-link" href="https://chenfengyuan.com/">About</a>
+            </nav>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/jquery@3/dist/jquery.slim.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/bootstrap@4/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@2/dist/vue.min.js" crossorigin="anonymous"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+
+            window.vm = new Vue({
+                el: '#app',
+
+                data: {
+                    pasteResult: '',
+                    options: {
+                        maxWidth: 1000,
+                        maxHeight: 1000,
+                        border: 0,
+                        padding: 0,
+                        quality: 0.5,
+                        outputType: 'image/jpeg'
+                    },
+                    input: {
+                        image: null,
+                        width: null,
+                        height: null,
+                        file: null,
+                        url: null
+                    },
+                    output: {
+                        image: null,
+                        width: null,
+                        height: null,
+                        file: null,
+                        url: null,
+                        rename: ''
+                    }
+                },
+
+                filters: {
+                    prettySize: function (size) {
+                        var kilobyte = 1024;
+                        var megabyte = kilobyte * kilobyte;
+
+                        if (size > megabyte) {
+                            return (size / megabyte).toFixed(2) + ' MB';
+                        } else if (size > kilobyte) {
+                            return (size / kilobyte).toFixed(2) + ' KB';
+                        } else if (size >= 0) {
+                            return size + ' B';
+                        }
+
+                        return 'N/A';
+                    },
+                },
+
+                methods: {
+                    pasteImage: async function () {
+                        console.log('try paste image...');
+                        const auth = await navigator.permissions.query({
+                            name: "clipboard-read"
+                        });
+                        if (auth.state !== 'denied') {
+                            const item_list = await navigator.clipboard.read();
+                            let image_type;
+                            const item = item_list.find(item =>
+                                item.types.some(type => {
+                                    if (type.startsWith('image/')) {
+                                        image_type = type;
+                                        return true;
+                                    }
+                                })
+                            );
+                            if (!item) {
+                                // image not found:
+                                this.pasteResult = 'failed';
+                                return;
+                            }
+                            this.pasteResult = 'ok';
+                            const file = item && await item.getType(image_type);
+                            file.name = 'unamed.jpg';
+                            this.load(file);
+                        }
+                    },
+                    load: function (file) {
+                        console.log('load file: ', file);
+                        if (!file) {
+                            return;
+                        }
+                        // load input file as Image:
+                        this.input.file = file;
+                        this.input.url = URL.createObjectURL(file);
+
+                        let img = new Image();
+                        img.onload = () => {
+                            this.input.image = img;
+                            this.input.width = img.width;
+                            this.input.height = img.height;
+                            console.log('input image: ' + this.input.width + ' x ' + this.input.height);
+                            this.updateOutput();
+                        }
+                        img.src = this.input.url;
+                    },
+
+                    updateOutput: function () {
+                        if (!this.input.image || !this.input.width || !this.input.height) {
+                            return;
+                        }
+
+                        const b = this.options.border;
+                        const p = this.options.padding;
+
+                        this.output.width = this.input.width + b + b + p + p;
+                        this.output.height = this.input.height + b + b + p + p;
+
+                        const w = this.output.width;
+                        const h = this.output.height;
+                        console.log('update output: ' + w + ' x ' + h);
+
+                        let canvas = new OffscreenCanvas(w, h);
+                        let ctx = canvas.getContext('2d');
+                        // draw background:
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, w, h);
+                        // draw border:
+                        if (b > 0) {
+                            ctx.fillStyle = '#999999';
+                            ctx.fillRect(0, 0, w, b);
+                            ctx.fillRect(0, h - b, w, b);
+                            ctx.fillRect(0, 0, b, h);
+                            ctx.fillRect(w - b, 0, b, h);
+                        }
+                        // draw image:
+                        ctx.drawImage(this.input.image, b + p, b + p, w - b - b - p - p, h - b - b - p - p);
+                        // set output image:
+                        canvas.convertToBlob({
+                            type: this.options.outputType,
+                            quality: this.options.quality
+                        }).then(blob => {
+                            this.output.file = blob;
+                            this.output.url = URL.createObjectURL(blob);
+                            let ext = '.png';
+                            if (this.options.outputType === 'image/jpeg') {
+                                ext = '.jpg';
+                            }
+                            let filename = this.input.file.name;
+                            let n = filename.lastIndexOf('.');
+                            this.output.file.name = filename.substring(0, n) + ext;
+                            this.output.rename = this.output.file.name;
+                        }).catch(err => {
+                            console.error(err);
+                        });
+                    },
+
+                    change: function (e) {
+                        this.load(e.target.files ? e.target.files[0] : null);
+                    },
+
+                    dragover: function (e) {
+                        e.preventDefault();
+                    },
+
+                    drop: function (e) {
+                        e.preventDefault();
+                        console.log(e);
+                        this.load(e.dataTransfer.files ? e.dataTransfer.files[0] : null);
+                    },
+                },
+
+                watch: {
+                    options: {
+                        deep: true,
+                        handler: function () {
+                            this.updateOutput();
+                        },
+                    },
+                },
+
+                mounted: function () {
+                    let xhr = new XMLHttpRequest();
+                    xhr.onload = () => {
+                        var blob = xhr.response;
+                        blob.name = 'picture.jpg';
+                        this.load(blob);
+                    };
+                    xhr.open('GET', 'picture.jpg');
+                    xhr.responseType = 'blob';
+                    xhr.send();
+                },
+            });
+        });
+    </script>
+</body>
+
+</html>
