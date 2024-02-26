@@ -15,7 +15,7 @@
         <div class="container-xl">
             <div class="row">
                 <div class="col">
-                    <h1>Image Processor for Web Browser <small class="h6">v1.0</small></h1>
+                    <h1>Image Processor for Web Browser</h1>
                     <p class="lead">In-browser JavaScript image processor.</p>
                 </div>
             </div>
@@ -23,8 +23,6 @@
     </div>
 
     <div class="container-xl">
-        <h3>Playground</h3>
-        <hr>
         <div id="app" v-cloak>
             <div class="card bg-light mb-4" @change="change" @dragover="dragover" @drop="drop">
                 <div class="card-body">
@@ -40,69 +38,67 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-xl-4 mb-4">
+                <div class="col-lg-3 col-xl-3 mb-4">
                     <div class="card h-100">
                         <h4 class="card-header">Options</h4>
                         <div class="card-body">
                             <div class="form-group row">
-                                <label for="inputMaxWidth" class="col-5 col-form-label">maxWidth</label>
-                                <div class="col-7">
+                                <label for="inputMaxWidth" class="col-6 col-form-label">maxWidth</label>
+                                <div class="col-6">
                                     <input type="number" name="maxWidth" class="form-control" id="inputMaxWidth"
                                         placeholder="Infinity" v-model.number="options.maxWidth">
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="inputMaxHeight" class="col-5 col-form-label">maxHeight</label>
-                                <div class="col-7">
+                                <label for="inputMaxHeight" class="col-6 col-form-label">maxHeight</label>
+                                <div class="col-6">
                                     <input type="number" name="maxHeight" class="form-control" id="inputMaxHeight"
                                         placeholder="Infinity" v-model.number="options.maxHeight">
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label class="col-5 col-form-label">border:
+                                <label class="col-6 col-form-label">border:
                                     <span>{{ options.border }}</span>
                                 </label>
-                                <div class="col-7">
+                                <div class="col-6">
                                     <input type="range" min="0" max="10" step="1" class="w-100 mt-2"
                                         v-model.number="options.border">
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label class="col-5 col-form-label">padding:
+                                <label class="col-6 col-form-label">padding:
                                     <span>{{ options.padding }}</span>
                                 </label>
-                                <div class="col-7">
+                                <div class="col-6">
                                     <input type="range" min="0" max="10" step="1" class="w-100 mt-2"
                                         v-model.number="options.padding">
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label class="col-5 col-form-label">quality:
+                                <label class="col-6 col-form-label">quality:
                                     <span>{{ options.quality }}</span>
                                 </label>
-                                <div class="col-7">
+                                <div class="col-6">
                                     <input type="range" min="0.1" max="1.0" step="0.1" class="w-100 mt-2"
                                         v-model.number="options.quality">
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label class="col-5 col-form-label">Output Type</label>
-                                <div class="col-7">
+                                <label class="col-6 col-form-label">Output</label>
+                                <div class="col-6">
                                     <select class="form-control" v-model="options.outputType">
-                                        <option>image/jpeg</option>
-                                        <option>image/png</option>
+                                        <option value="image/jpeg">JPG</option>
+                                        <option value="image/png">PNG</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-8 mb-4">
+                <div class="col-lg-9 col-xl-9 mb-4">
                     <div class="card mb-4">
                         <h5 class="card-header d-flex align-items-center justify-content-between">
                             <span>Input image</span>
-                            <a class="btn btn-sm btn-blocks btn-outline-primary"
-                                :download="input.file && input.file.name" :href="input.url">Download</a>
                         </h5>
                         <div class="card-body">
                             <dl class="row">
@@ -164,10 +160,7 @@
         <div class="container">
             <hr>
             <nav class="nav flex-wrap justify-content-center mb-3">
-                <a class="nav-link" href="https://github.com/fengyuanchen/compressorjs">GitHub</a>
-                <a class="nav-link" href="https://github.com/fengyuanchen/compressorjs/releases">Releases</a>
-                <a class="nav-link" href="https://github.com/fengyuanchen/compressorjs/blob/main/LICENSE">License</a>
-                <a class="nav-link" href="https://chenfengyuan.com/">About</a>
+                Image Processor &copy; 2024
             </nav>
         </div>
     </footer>
